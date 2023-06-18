@@ -1,9 +1,9 @@
-import User from '~/models/schemas/User.schema';
-import databaseService from './database.services';
+import { TokenType } from '~/constants/enums';
 import { RegisterReqBody } from '~/models/requests/User.request';
+import User from '~/models/schemas/User.schema';
 import { hashPassword } from '~/utils/crypto';
 import { signToken } from '~/utils/jwt';
-import { TokenType } from '~/constants/enums';
+import databaseService from './database.services';
 
 class UsersService {
   private signAccessToken(user_id: string) {
