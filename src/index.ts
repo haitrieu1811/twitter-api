@@ -1,12 +1,15 @@
-import express, { NextFunction, Request, Response } from 'express';
+import { config } from 'dotenv';
+import express from 'express';
+
+import { defaultErrorHandler } from './middlewares/error.middlewares';
 import usersRouter from './routes/users.routes';
 import databaseService from './services/database.services';
-import { defaultErrorHandler } from './middlewares/error.middlewares';
+config();
 
 databaseService.connect();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT;
 
 app.use(express.json());
 app.use('/users', usersRouter);
