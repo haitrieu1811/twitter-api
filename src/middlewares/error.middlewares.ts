@@ -2,10 +2,10 @@ import { NextFunction, Request, Response } from 'express';
 import omit from 'lodash/omit';
 
 import HTTP_STATUS from '~/constants/httpStatus';
-import { ErrorWithMessage } from '~/models/Errors';
+import { ErrorWithStatus } from '~/models/Errors';
 
 export const defaultErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
-  if (err instanceof ErrorWithMessage) {
+  if (err instanceof ErrorWithStatus) {
     return res.status(err.status).json(omit(err, ['status']));
   }
 
