@@ -9,6 +9,9 @@ import User from '~/models/schemas/User.schema';
 import { hashPassword } from '~/utils/crypto';
 import { signToken } from '~/utils/jwt';
 import databaseService from './database.services';
+import Follower from '~/models/schemas/Follower.schema';
+import { ErrorWithStatus } from '~/models/Errors';
+import HTTP_STATUS from '~/constants/httpStatus';
 config();
 class UsersService {
   private signAccessToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
@@ -87,6 +90,7 @@ class UsersService {
       new User({
         ...payload,
         _id: user_id,
+        username: `user${user_id}`,
         date_of_birth: new Date(payload.data_of_birth),
         password: hashPassword(payload.password),
         email_verify_token
@@ -245,6 +249,66 @@ class UsersService {
       }
     );
     return user.value;
+  }
+
+  async getProfile(username: string) {
+    const profile = await databaseService.users.findOne(
+      { username },
+      {
+        projection: {
+          password: 0,
+          email_verify_token: 0,
+          forgot_password_token: 0,
+          verify: 0,
+          created_at: 0,
+          updated_at: 0
+        }
+      }
+    );
+    return profile;
+  }
+
+  async checkFollowerExist({ user_id, followed_user_id }: { user_id: string; followed_user_id: string }) {
+    const follower = await databaseService.followers.findOne({
+      user_id: new ObjectId(user_id),
+      followed_user_id: new ObjectId(followed_user_id)
+    });
+    return Boolean(follower);
+  }
+
+  async follow({ user_id, followed_user_id }: { user_id: string; followed_user_id: string }) {
+    const isExist = await this.checkFollowerExist({ user_id, followed_user_id });
+    if (!isExist) {
+      await databaseService.followers.insertOne(
+        new Follower({
+          user_id: new ObjectId(user_id),
+          followed_user_id: new ObjectId(followed_user_id)
+        })
+      );
+      return {
+        message: USERS_MESSAGES.FOLLOW_SUCCESS
+      };
+    }
+    return {
+      message: USERS_MESSAGES.FOLLOWED
+    };
+  }
+
+  async unfollow({ user_id, followed_user_id }: { user_id: string; followed_user_id: string }) {
+    const isExist = await this.checkFollowerExist({ user_id, followed_user_id });
+    if (isExist) {
+      const result = await databaseService.followers.deleteOne({
+        user_id: new ObjectId(user_id),
+        followed_user_id: new ObjectId(followed_user_id)
+      });
+      return {
+        message: USERS_MESSAGES.UNFOLLOW_SUCCESS,
+        result
+      };
+    }
+    return {
+      message: USERS_MESSAGES.ALREADY_UNFOLLOWED
+    };
   }
 }
 

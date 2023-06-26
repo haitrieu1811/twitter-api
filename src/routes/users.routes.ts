@@ -1,12 +1,15 @@
 import { Router } from 'express';
 import {
+  followController,
   forgotPasswordController,
   getMeController,
+  getProfileController,
   loginController,
   logoutController,
   registerController,
   resendEmailVerifyController,
   resetPasswordController,
+  unfollowController,
   updateMeController,
   verifyEmailTokenController,
   verifyForgotPasswordTokenController
@@ -15,11 +18,13 @@ import { filterMiddleware } from '~/middlewares/common.middlewares';
 import {
   accessTokenValidator,
   emailVerifyTokenValidator,
+  followValidator,
   forgotPasswordValidator,
   loginValidator,
   refreshTokenValidator,
   registerValidator,
   resetPasswordValidator,
+  unfollowValidator,
   updateMeValidator,
   verifiedUserValidator,
   verifyForgotPasswordTokenValidator
@@ -58,6 +63,21 @@ usersRouter.patch(
     'website'
   ]),
   wrapRequestHandler(updateMeController)
+);
+usersRouter.get('/:username', wrapRequestHandler(getProfileController));
+usersRouter.post(
+  '/follow',
+  accessTokenValidator,
+  verifiedUserValidator,
+  followValidator,
+  wrapRequestHandler(followController)
+);
+usersRouter.delete(
+  '/follow/:user_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  unfollowValidator,
+  wrapRequestHandler(unfollowController)
 );
 
 export default usersRouter;

@@ -1,10 +1,9 @@
 import { config } from 'dotenv';
 import { NextFunction, Request } from 'express';
-import { ParamSchema, checkSchema } from 'express-validator';
+import { ParamSchema, check, checkSchema } from 'express-validator';
 import { JsonWebTokenError } from 'jsonwebtoken';
 import capitalize from 'lodash/capitalize';
 import { ObjectId } from 'mongodb';
-import { ParamsDictionary } from 'express-serve-static-core';
 
 import { UserVerifyStatus } from '~/constants/enums';
 import HTTP_STATUS from '~/constants/httpStatus';
@@ -164,6 +163,27 @@ const imageSchema: ParamSchema = {
       max: 200
     },
     errorMessage: USERS_MESSAGES.IMAGE_URL_LENGTH
+  }
+};
+
+const userIdSchema: ParamSchema = {
+  custom: {
+    options: async (value: string) => {
+      if (!ObjectId.isValid(value)) {
+        throw new ErrorWithStatus({
+          message: USERS_MESSAGES.INVALID_USER_ID,
+          status: HTTP_STATUS.NOT_FOUND
+        });
+      }
+      const isFollowedUserExist = await databaseService.users.findOne({ _id: new ObjectId(value) });
+      if (isFollowedUserExist === null) {
+        throw new ErrorWithStatus({
+          message: USERS_MESSAGES.USER_NOT_FOUND,
+          status: HTTP_STATUS.NOT_FOUND
+        });
+      }
+      return true;
+    }
   }
 };
 
@@ -499,5 +519,23 @@ export const updateMeValidator = validate(
       cover_photo: imageSchema
     },
     ['body']
+  )
+);
+
+export const followValidator = validate(
+  checkSchema(
+    {
+      followed_user_id: userIdSchema
+    },
+    ['body']
+  )
+);
+
+export const unfollowValidator = validate(
+  checkSchema(
+    {
+      followed_user_id: userIdSchema
+    },
+    ['params']
   )
 );

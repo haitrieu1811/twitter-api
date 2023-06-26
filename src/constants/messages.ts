@@ -45,8 +45,20 @@ export const USERS_MESSAGES = {
   WEBSITE_MUST_BE_STRING: 'Website must be a string',
   WEBSITE_LENGTH: 'Website length must be from 1 to 200',
   USERNAME_MUST_BE_STRING: 'Username must be a string',
+  USERNAME_INVALID:
+    'Username must be 4-15 characters long and contain only letters, numbers, underscores, not only numbers',
   USERNAME_LENGTH: 'Username length must be from 1 to 50',
   IMAGE_URL_MUST_BE_STRING: 'Avatar must be a string',
   IMAGE_URL_LENGTH: 'Avatar length must be from 1 to 200',
-  UPDATE_ME_SUCCESS: 'Update my profile success'
+  UPDATE_ME_SUCCESS: 'Update my profile success',
+  GET_PROFILE_SUCCESS: 'Get profile success',
+  FOLLOW_SUCCESS: 'Follow success',
+  INVALID_USER_ID: 'Invalid user id',
+  FOLLOWED: 'Followed',
+  ALREADY_UNFOLLOWED: 'Already unfollowed',
+  UNFOLLOW_SUCCESS: 'Unfollow success',
+  USERNAME_EXISTED: 'Username existed',
+  OLD_PASSWORD_NOT_MATCH: 'Old password not match',
+  CHANGE_PASSWORD_SUCCESS: 'Change password success',
+  GMAIL_NOT_VERIFIED: 'Gmail not verified'
 } as const;
