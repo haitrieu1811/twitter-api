@@ -297,17 +297,35 @@ class UsersService {
   async unfollow({ user_id, followed_user_id }: { user_id: string; followed_user_id: string }) {
     const isExist = await this.checkFollowerExist({ user_id, followed_user_id });
     if (isExist) {
-      const result = await databaseService.followers.deleteOne({
+      await databaseService.followers.deleteOne({
         user_id: new ObjectId(user_id),
         followed_user_id: new ObjectId(followed_user_id)
       });
       return {
-        message: USERS_MESSAGES.UNFOLLOW_SUCCESS,
-        result
+        message: USERS_MESSAGES.UNFOLLOW_SUCCESS
       };
     }
     return {
       message: USERS_MESSAGES.ALREADY_UNFOLLOWED
+    };
+  }
+
+  async changePassword({ password, user_id }: { password: string; user_id: string }) {
+    await databaseService.users.updateOne(
+      {
+        _id: new ObjectId(user_id)
+      },
+      {
+        $set: {
+          password: hashPassword(password)
+        },
+        $currentDate: {
+          updated_at: true
+        }
+      }
+    );
+    return {
+      message: USERS_MESSAGES.CHANGE_PASSWORD_SUCCESS
     };
   }
 }
