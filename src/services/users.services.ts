@@ -1,15 +1,16 @@
+import axios from 'axios';
 import { config } from 'dotenv';
 import { ObjectId } from 'mongodb';
 
 import { TokenType, UserVerifyStatus } from '~/constants/enums';
 import { USERS_MESSAGES } from '~/constants/messages';
 import { RegisterReqBody, UpdateMeReqBody } from '~/models/requests/User.request';
+import Follower from '~/models/schemas/Follower.schema';
 import RefreshToken from '~/models/schemas/RefreshToken.schema';
 import User from '~/models/schemas/User.schema';
 import { hashPassword } from '~/utils/crypto';
 import { signToken } from '~/utils/jwt';
 import databaseService from './database.services';
-import Follower from '~/models/schemas/Follower.schema';
 import { ErrorWithStatus } from '~/models/Errors';
 import HTTP_STATUS from '~/constants/httpStatus';
 config();
@@ -91,13 +92,11 @@ class UsersService {
         ...payload,
         _id: user_id,
         username: `user${user_id}`,
-        date_of_birth: new Date(payload.data_of_birth),
+        date_of_birth: new Date(payload.date_of_birth),
         password: hashPassword(payload.password),
         email_verify_token
       })
     );
-    console.log('email_verify_token: ', email_verify_token);
-
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
       user_id: user_id.toString(),
       verify: UserVerifyStatus.Unverified
@@ -118,6 +117,88 @@ class UsersService {
     };
   }
 
+  private async getOauthGoogleToken(code: string) {
+    const body = {
+      code,
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+      grant_type: 'authorization_code'
+    };
+    const { data } = await axios.post('https://oauth2.googleapis.com/token', body, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+    return data as {
+      access_token: string;
+      id_token: string;
+    };
+  }
+
+  private async getGoogleUserInfo(access_token: string, id_token: string) {
+    const { data } = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
+      params: {
+        access_token,
+        alt: 'json'
+      },
+      headers: {
+        Authorization: `Bearer ${id_token}`
+      }
+    });
+    return data as {
+      id: string;
+      email: string;
+      verified_email: boolean;
+      name: string;
+      given_name: string;
+      family_name: string;
+      picture: string;
+      locale: string;
+    };
+  }
+
+  async oauth(code: string) {
+    const { access_token, id_token } = await this.getOauthGoogleToken(code);
+    const userInfo = await this.getGoogleUserInfo(access_token, id_token);
+    // Kiểm tra đã xác thực email chưa
+    if (!userInfo.verified_email) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.GMAIL_NOT_VERIFIED,
+        status: HTTP_STATUS.BAD_REQUEST
+      });
+    }
+    // Kiểm tra email có tồn tại trên hệ thống chưa
+    const user = await databaseService.users.findOne({ email: userInfo.email });
+    // Nếu đã tồn tại - cho đăng nhập
+    if (user) {
+      const data = await this.login({
+        user_id: user._id.toString(),
+        verify: user.verify as UserVerifyStatus
+      });
+      return {
+        ...data,
+        new_user: 0,
+        verify: user.verify
+      };
+    } else {
+      // Nếu chưa tồn tại - tạo mới tài khoản
+      const password = Math.random().toString(36).substring(2, 15);
+      const data = await this.register({
+        name: userInfo.name,
+        email: userInfo.email,
+        password,
+        confirm_password: password,
+        date_of_birth: new Date().toISOString()
+      });
+      return {
+        ...data,
+        new_user: 1,
+        verify: UserVerifyStatus.Unverified
+      };
+    }
+  }
+
   async logout(refresh_token: string) {
     await databaseService.refresh_tokens.deleteOne({ token: refresh_token });
     return {
@@ -129,13 +210,21 @@ class UsersService {
     const [[access_token, refresh_token]] = await Promise.all([
       this.signAccessAndRefreshToken({ user_id, verify }),
       databaseService.users.updateOne(
-        { _id: new ObjectId(user_id) },
         {
-          $set: { email_verify_token: '', verify: UserVerifyStatus.Verified },
-          $currentDate: { updated_at: true }
+          _id: new ObjectId(user_id)
+        },
+        {
+          $set: {
+            email_verify_token: '',
+            verify: UserVerifyStatus.Verified
+          },
+          $currentDate: {
+            updated_at: true
+          }
         }
       )
     ]);
+    await this.insertRefreshToken({ user_id, refresh_token });
     return {
       access_token,
       refresh_token

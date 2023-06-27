@@ -1,6 +1,6 @@
 import { config } from 'dotenv';
 import { NextFunction, Request } from 'express';
-import { ParamSchema, check, checkSchema } from 'express-validator';
+import { ParamSchema, checkSchema } from 'express-validator';
 import { JsonWebTokenError } from 'jsonwebtoken';
 import capitalize from 'lodash/capitalize';
 import { ObjectId } from 'mongodb';
