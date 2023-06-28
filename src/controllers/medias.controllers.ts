@@ -1,21 +1,24 @@
 import { NextFunction, Request, Response } from 'express';
 import path from 'path';
+import { UPLOAD_DIR } from '~/constants/dir';
+import { USERS_MESSAGES } from '~/constants/messages';
+import mediasService from '~/services/medias.services';
 
-export const uploadSingleImage = async (req: Request, res: Response, next: NextFunction) => {
-  const formidable = (await import('formidable')).default;
-  const form = formidable({
-    uploadDir: path.resolve('uploads'),
-    maxFiles: 1,
-    keepExtensions: true,
-    maxFileSize: 300 * 1024 // 300KB
+export const uploadImageController = async (req: Request, res: Response, next: NextFunction) => {
+  const url = await mediasService.handleUploadImage(req);
+  return res.json({
+    message: USERS_MESSAGES.UPLOAD_SUCCESS,
+    result: url
   });
+};
 
-  form.parse(req, (err, fields, files) => {
+export const serveImageController = (req: Request, res: Response, next: NextFunction) => {
+  const { name } = req.params;
+  return res.sendFile(path.resolve(UPLOAD_DIR, name), (err) => {
     if (err) {
-      throw err;
+      return res.status((err as any).status).json({
+        message: 'File not exist'
+      });
     }
-    return res.json({
-      message: 'Upload single image succeed'
-    });
   });
 };
