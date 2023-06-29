@@ -1,22 +1,35 @@
 import { Request } from 'express';
 import { File } from 'formidable';
 import fs from 'fs';
+import path from 'path';
 
-import { UPLOAD_TEMP_DIR } from '~/constants/dir';
+import { UPLOAD_IMAGE_DIR, UPLOAD_IMAGE_TEMP_DIR, UPLOAD_VIDEO_DIR } from '~/constants/dir';
 
 export const initFolder = () => {
-  const uploadsPathFolder = UPLOAD_TEMP_DIR;
-  if (!fs.existsSync(uploadsPathFolder)) {
-    fs.mkdirSync(uploadsPathFolder, {
-      recursive: true // Tạo nested folder
-    });
-  }
+  [UPLOAD_IMAGE_DIR, UPLOAD_VIDEO_DIR].forEach((dir) => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, {
+        recursive: true // Tạo nested folder
+      });
+    }
+  });
+};
+
+export const getNameFromFullname = (fullname: string) => {
+  const nameArr = fullname.split('.');
+  nameArr.pop();
+  return nameArr.join('');
+};
+
+export const getExtensionFromFullname = (fullname: string) => {
+  const nameArr = fullname.split('.');
+  return nameArr[nameArr.length - 1];
 };
 
 export const handleUploadImage = async (req: Request) => {
   const formidable = (await import('formidable')).default;
   const form = formidable({
-    uploadDir: UPLOAD_TEMP_DIR,
+    uploadDir: UPLOAD_IMAGE_DIR,
     maxFiles: 4,
     keepExtensions: true,
     maxFileSize: 300 * 1024, // 300KB
@@ -32,19 +45,43 @@ export const handleUploadImage = async (req: Request) => {
   return new Promise<File[]>((resolve, reject) => {
     form.parse(req, (err, fields, files) => {
       if (err) {
-        reject(err);
+        return reject(err);
       }
       // eslint-disable-next-line no-extra-boolean-cast
       if (!Boolean(files.image)) {
-        reject(new Error('File is empty'));
+        return reject(new Error('File is empty'));
       }
-      resolve(files.image as File[]);
+      return resolve(files.image as File[]);
     });
   });
 };
 
-export const getNameFromFullname = (fullname: string) => {
-  const nameArr = fullname.split('.');
-  nameArr.pop();
-  return nameArr.join('');
+export const handleUploadVideo = async (req: Request) => {
+  const formiable = (await import('formidable')).default;
+  const form = formiable({
+    uploadDir: UPLOAD_VIDEO_DIR,
+    maxFiles: 1,
+    maxFileSize: 50 * 1024 * 1024, // 50MB
+    filter: ({ name, originalFilename, mimetype }) => {
+      return true;
+    }
+  });
+  return new Promise<File[]>((resolve, reject) => {
+    form.parse(req, (err, fields, files) => {
+      if (err) {
+        return reject(err);
+      }
+      // eslint-disable-next-line no-extra-boolean-cast
+      if (!Boolean(files.video)) {
+        return reject(new Error('File is empty'));
+      }
+      const videos = files.video as File[];
+      videos.forEach((video) => {
+        const extension = getExtensionFromFullname(video.originalFilename as string);
+        fs.renameSync(video.filepath, `${video.filepath}.${extension}`);
+        video.newFilename = `${video.newFilename}.${extension}`;
+      });
+      return resolve(videos);
+    });
+  });
 };
