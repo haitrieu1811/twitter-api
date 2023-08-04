@@ -14,6 +14,10 @@ export interface LogoutReqBody {
   refresh_token: string;
 }
 
+export interface RefreshTokenReqBody {
+  refresh_token: string;
+}
+
 export interface ResetPasswordReqBody {
   password: string;
   confirm_password: string;

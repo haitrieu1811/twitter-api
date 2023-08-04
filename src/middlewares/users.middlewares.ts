@@ -206,41 +206,13 @@ export const loginValidator = validate(
             });
             if (user === null) {
               throw new Error(USERS_MESSAGES.EMAIL_OR_PASSWORD_IS_INCORRECT);
-              throw new ErrorWithStatus({
-                message: 'Lỗi ',
-                status: 401
-              });
             }
             req.user = user;
             return true;
           }
         }
       },
-      password: {
-        notEmpty: {
-          errorMessage: USERS_MESSAGES.PASSWORD_IS_REQUIRED
-        },
-        isString: {
-          errorMessage: USERS_MESSAGES.PASSWORD_MUST_BE_A_STRING
-        },
-        isLength: {
-          options: {
-            min: 6,
-            max: 50
-          },
-          errorMessage: USERS_MESSAGES.PASSWORD_LENGTH_MUST_BE_FROM_6_TO_50
-        },
-        isStrongPassword: {
-          options: {
-            minLength: 6,
-            minLowercase: 1,
-            minUppercase: 1,
-            minNumbers: 1,
-            minSymbols: 1
-          },
-          errorMessage: USERS_MESSAGES.PASSWORD_MUST_BE_STRONG
-        }
-      }
+      password: passwordSchema
     },
     ['body']
   )
@@ -457,8 +429,7 @@ export const updateMeValidator = validate(
       },
       date_of_birth: {
         ...dateOfBirthSchema,
-        optional: true,
-        notEmpty: undefined
+        optional: true
       },
       bio: {
         optional: true,

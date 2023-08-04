@@ -8,7 +8,7 @@ import { isProduction } from '~/constants/config';
 import { UPLOAD_IMAGE_DIR } from '~/constants/dir';
 import { MediaType } from '~/constants/enums';
 import { Media } from '~/models/Other';
-import { getNameFromFullname, handleUploadImage, handleUploadVideo } from '~/utils/file';
+import { handleUploadImage, handleUploadVideo } from '~/utils/file';
 config();
 
 class MediasService {
@@ -16,8 +16,8 @@ class MediasService {
     const images = await handleUploadImage(req);
     const result: Media[] = await Promise.all(
       images.map(async (image) => {
-        const newName = getNameFromFullname(image.newFilename);
-        const newPath = path.resolve(UPLOAD_IMAGE_DIR, `${newName}.jpg`);
+        const newName = `${image.newFilename}.jpg`;
+        const newPath = path.resolve(UPLOAD_IMAGE_DIR, newName);
         await sharp(image.filepath).jpeg().toFile(newPath);
         fs.unlinkSync(image.filepath);
         return {
@@ -36,8 +36,8 @@ class MediasService {
     const result: Media[] = videos.map((video) => {
       return {
         url: isProduction
-          ? `${process.env.HOST}/static/video/${video.newFilename}`
-          : `http://localhost:${process.env.PORT}/static/video/${video.newFilename}`,
+          ? `${process.env.HOST}/static/video-stream/${video.newFilename}`
+          : `http://localhost:${process.env.PORT}/static/video-stream/${video.newFilename}`,
         type: MediaType.Video
       };
     });
