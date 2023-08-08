@@ -9,7 +9,7 @@ import Follower from '~/models/schemas/Follower.schema';
 import RefreshToken from '~/models/schemas/RefreshToken.schema';
 import User from '~/models/schemas/User.schema';
 import { hashPassword } from '~/utils/crypto';
-import { signToken } from '~/utils/jwt';
+import { signToken, verifyToken } from '~/utils/jwt';
 import databaseService from './database.services';
 import { ErrorWithStatus } from '~/models/Errors';
 import HTTP_STATUS from '~/constants/httpStatus';
@@ -29,7 +29,18 @@ class UsersService {
     });
   }
 
-  private signRefreshToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  private signRefreshToken({ user_id, verify, exp }: { user_id: string; verify: UserVerifyStatus; exp?: number }) {
+    if (exp) {
+      return signToken({
+        payload: {
+          user_id,
+          token_type: TokenType.RefreshToken,
+          verify,
+          exp
+        },
+        privateKey: process.env.JWT_SECRET_REFRESH_TOKEN as string
+      });
+    }
     return signToken({
       payload: {
         user_id,
@@ -75,9 +86,19 @@ class UsersService {
     return Promise.all([this.signAccessToken({ user_id, verify }), this.signRefreshToken({ user_id, verify })]);
   }
 
-  private insertRefreshToken({ user_id, refresh_token }: { user_id: string; refresh_token: string }) {
+  private insertRefreshToken({
+    user_id,
+    refresh_token,
+    iat,
+    exp
+  }: {
+    user_id: string;
+    refresh_token: string;
+    iat: number;
+    exp: number;
+  }) {
     return databaseService.refresh_tokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat, exp })
     );
   }
 
@@ -101,7 +122,8 @@ class UsersService {
       user_id: user_id.toString(),
       verify: UserVerifyStatus.Unverified
     });
-    await this.insertRefreshToken({ user_id: user_id.toString(), refresh_token });
+    const { iat, exp } = await this.decodeRefreshToken(refresh_token);
+    await this.insertRefreshToken({ user_id: user_id.toString(), refresh_token, iat, exp });
     return {
       access_token,
       refresh_token
@@ -110,7 +132,8 @@ class UsersService {
 
   async login({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken({ user_id, verify });
-    await this.insertRefreshToken({ user_id, refresh_token });
+    const { iat, exp } = await this.decodeRefreshToken(refresh_token);
+    await this.insertRefreshToken({ user_id, refresh_token, iat, exp });
     return {
       access_token,
       refresh_token
@@ -206,26 +229,38 @@ class UsersService {
     };
   }
 
+  private decodeRefreshToken(refresh_token: string) {
+    return verifyToken({
+      token: refresh_token,
+      secretOrPublicKey: process.env.JWT_SECRET_REFRESH_TOKEN as string
+    });
+  }
+
   async refreshToken({
     user_id,
     verify,
-    refresh_token
+    refresh_token,
+    exp
   }: {
     user_id: string;
     verify: UserVerifyStatus;
     refresh_token: string;
+    exp: number;
   }) {
     const [new_access_token, new_refresh_token] = await Promise.all([
       this.signAccessToken({ user_id, verify }),
-      this.signRefreshToken({ user_id, verify }),
+      this.signRefreshToken({ user_id, verify, exp }),
       databaseService.refresh_tokens.deleteOne({
         token: refresh_token
       })
     ]);
+    const decoded_refresh_token = await this.decodeRefreshToken(new_refresh_token);
     await databaseService.refresh_tokens.insertOne(
       new RefreshToken({
         token: new_refresh_token,
-        user_id: new ObjectId(user_id)
+        user_id: new ObjectId(user_id),
+        iat: decoded_refresh_token.iat,
+        exp: decoded_refresh_token.exp
       })
     );
     return {
@@ -252,7 +287,8 @@ class UsersService {
         }
       )
     ]);
-    await this.insertRefreshToken({ user_id, refresh_token });
+    const { iat, exp } = await this.decodeRefreshToken(refresh_token);
+    await this.insertRefreshToken({ user_id, refresh_token, iat, exp });
     return {
       access_token,
       refresh_token

@@ -1,5 +1,6 @@
 import { config } from 'dotenv';
 import express from 'express';
+import cors from 'cors';
 
 import { defaultErrorHandler } from './middlewares/error.middlewares';
 import mediasRouter from './routes/medias.routes';
@@ -11,10 +12,15 @@ import { UPLOAD_VIDEO_DIR } from './constants/dir';
 config();
 initFolder();
 
-databaseService.connect();
+databaseService.connect().then(() => {
+  databaseService.indexUsers();
+  databaseService.indexRefreshTokens();
+  databaseService.indexFollowers();
+});
 const app = express();
 const port = process.env.PORT || 4000;
 
+app.use(cors());
 app.use(express.json());
 app.use('/users', usersRouter);
 app.use('/medias', mediasRouter);
