@@ -58,7 +58,7 @@ class Queue {
       try {
         await encodeHLSWithMultipleVideoStreams(videoPath);
         this.items.shift();
-        await fsPromise.unlink(videoPath);
+        // await fsPromise.unlink(videoPath);
         await databaseService.videoStatus.updateOne(
           {
             name
@@ -141,7 +141,7 @@ class MediasService {
     const result: Media[] = await Promise.all(
       videos.map(async (video) => {
         const fileName = getNameFromFullname(video.newFilename);
-        const filepathConverted = video.filepath.replace('/\\/g', '/');
+        const filepathConverted = video.filepath.replace(/\\/g, '/');
         queue.enqueue(filepathConverted);
         return {
           url: isProduction

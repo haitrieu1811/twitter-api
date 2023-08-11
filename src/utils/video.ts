@@ -49,9 +49,9 @@ const getWidth = (height: number, resolution: { width: number; height: number })
 
 export const encodeHLSWithMultipleVideoStreams = async (inputPath: string) => {
   const [bitrate, resolution] = await Promise.all([getBitrate(inputPath), getResolution(inputPath)]);
-  const parent_folder = path.join(inputPath, '..').replace('/\\/g', '/');
-  const outputSegmentPath = path.join(parent_folder, 'v%v/fileSequence%d.ts').replace('/\\/g', '/');
-  const outputPath = path.join(parent_folder, 'v%v/prog_index.m3u8').replace('/\\/g', '/');
+  const parent_folder = path.join(inputPath, '..').replace(/\\/g, '/');
+  const outputSegmentPath = path.join(parent_folder, 'v%v/fileSequence%d.ts').replace(/\\/g, '/');
+  const outputPath = path.join(parent_folder, 'v%v/prog_index.m3u8').replace(/\\/g, '/');
   const bitrate720 = bitrate > MAXIMUM_BITRATE_720P ? MAXIMUM_BITRATE_720P : bitrate;
   const bitrate1080 = bitrate > MAXIMUM_BITRATE_1080P ? MAXIMUM_BITRATE_1080P : bitrate;
   const bitrate1440 = bitrate > MAXIMUM_BITRATE_1440P ? MAXIMUM_BITRATE_1440P : bitrate;

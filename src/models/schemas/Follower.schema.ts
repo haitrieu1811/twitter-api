@@ -7,7 +7,7 @@ export interface FollowerType {
   created_at?: Date;
 }
 
-class Follower {
+export default class Follower {
   _id?: ObjectId;
   user_id: ObjectId;
   followed_user_id: ObjectId;
@@ -20,5 +20,3 @@ class Follower {
     this.created_at = follower.created_at || new Date();
   }
 }
-
-export default Follower;

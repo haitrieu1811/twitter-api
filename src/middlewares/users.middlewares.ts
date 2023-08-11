@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { NextFunction, Request } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { ParamSchema, checkSchema } from 'express-validator';
 import { JsonWebTokenError } from 'jsonwebtoken';
 import capitalize from 'lodash/capitalize';
@@ -10,7 +10,7 @@ import HTTP_STATUS from '~/constants/httpStatus';
 import { USERS_MESSAGES } from '~/constants/messages';
 import { REGEX_USERNAME } from '~/constants/regex';
 import { ErrorWithStatus } from '~/models/Errors';
-import { TokenPayload } from '~/models/requests/User.request';
+import { TokenPayload } from '~/models/requests/User.requests';
 import databaseService from '~/services/database.services';
 import usersService from '~/services/users.services';
 import { hashPassword } from '~/utils/crypto';
@@ -247,6 +247,15 @@ export const registerValidator = validate(
     ['body']
   )
 );
+
+export const isUserLoggedInValidator =
+  (middleware: (req: Request, res: Response, next: NextFunction) => void) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    if (req.headers.authorization) {
+      return middleware(req, res, next);
+    }
+    next();
+  };
 
 export const accessTokenValidator = validate(
   checkSchema(

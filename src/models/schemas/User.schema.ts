@@ -12,6 +12,7 @@ interface UserType {
   email_verify_token?: string; // jwt hoặc '' nếu đã xác thực email
   forgot_password_token?: string; // jwt hoặc '' nếu đã xác thực email
   verify?: UserVerifyStatus;
+  twitter_circle?: string[];
 
   bio?: string; // optional
   location?: string; // optional
@@ -21,7 +22,7 @@ interface UserType {
   cover_photo?: string; // optional
 }
 
-class User {
+export default class User {
   _id?: ObjectId;
   name?: string;
   email: string;
@@ -32,6 +33,7 @@ class User {
   email_verify_token?: string; // jwt hoặc '' nếu đã xác thực email
   forgot_password_token?: string; // jwt hoặc '' nếu đã xác thực email
   verify?: UserVerifyStatus;
+  twitter_circle: ObjectId[];
 
   bio?: string; // optional
   location?: string; // optional
@@ -53,6 +55,7 @@ class User {
     this.email_verify_token = user.email_verify_token || '';
     this.forgot_password_token = user.forgot_password_token || '';
     this.verify = user.verify || UserVerifyStatus.Unverified;
+    this.twitter_circle = user.twitter_circle ? user.twitter_circle.map((item) => new ObjectId(item)) : [];
 
     this.bio = user.bio || '';
     this.location = user.location || '';
@@ -62,5 +65,3 @@ class User {
     this.cover_photo = user.cover_photo || '';
   }
 }
-
-export default User;

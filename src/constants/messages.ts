@@ -62,5 +62,45 @@ export const USERS_MESSAGES = {
   CHANGE_PASSWORD_SUCCESS: 'Change password success',
   GMAIL_NOT_VERIFIED: 'Gmail not verified',
   UPLOAD_SUCCESS: 'Upload success',
-  GET_VIDEO_STATUS_SUCCEED: 'Get video status succeed'
+  GET_VIDEO_STATUS_SUCCEED: 'Get video status succeed',
+  TWEET_IS_NOT_PUBLIC: 'Tweet is not public'
+} as const;
+
+export const TWEETS_MESSAGES = {
+  INVALID_TYPE: 'Invalid type',
+  INVALID_AUDIENCE: 'Invalid audience',
+  PARENT_ID_MUST_BE_A_VALID_TWEET_ID: 'Parent id must be a valid tweet id',
+  PARENT_ID_MUST_BE_NULL: 'Parent id must be null',
+  CONTENT_MUST_BE_A_NON_EMPTY_STRING: 'Content must be a non empty string',
+  CONTENT_MUST_BE_EMPTY_STRING: 'Content must be a empty string',
+  CONTENT_MUST_BE_A_STRING: 'Content must be a string',
+  HASHTAGS_MUST_BE_AN_ARRAY: 'Hashtags must be an array',
+  HASHTAGS_MUST_BE_AN_ARRAY_OF_STRING: 'Hashtags must be an array of string',
+  MENTIONS_MUST_BE_AN_ARRAY_OF_USER_ID: 'Metions must be an array of user id',
+  MEDIAS_MUST_BE_AN_ARRAY: 'Medias must be an array',
+  MEDIAS_MUST_BE_AN_ARRAY_OF_MEDIA_OBJECT: 'Medias must be an array of media object',
+  CONTENT_IS_REQUIRED: 'Tweet content is required',
+  CREATE_TWEET_SUCCEED: 'Create tweet succeed',
+  TWEET_ID_IS_INVALID: 'Tweet id is invalid',
+  TWEET_ID_IS_REQUIRED: 'Tweet id is required',
+  TWEET_ID_MUST_BE_A_STRING: 'Tweet id must be a string',
+  TWEET_NOT_FOUND: 'Tweet not found',
+  GET_TWEET_SUCCEED: 'Get tweet succeed',
+  GET_TWEET_CHILDREN_SUCCEED: 'Get tweet children succeed',
+  LIMIT_MUST_BE_A_NUMBER: 'Limit must be a number',
+  LIMIT_MUST_FROM_1_TO_100: 'Limit must from 1 to 100',
+  PAGE_MUST_BE_A_NUMBER: 'Page must be a number',
+  PAGE_MUST_FROM_1: 'Page must from 1',
+  TYPE_IS_INVALID: 'Tweet type is invalid',
+  GET_NEW_FEEDS_SUCCEED: 'Get new feeds succeed'
+} as const;
+
+export const BOOKMARKS_MESSAGES = {
+  BOOKMARK_TWEET_SUCCEED: 'Bookmark tweet succeed',
+  UN_BOOKMARK_TWEET_SUCCEED: 'Unbookmark tweet succeed'
+} as const;
+
+export const LIKES_MESSAGES = {
+  LIKE_TWEET_SUCCEED: 'Like tweet succeed',
+  UN_LIKE_TWEET_SUCCEED: 'Unlike tweet succeed'
 } as const;

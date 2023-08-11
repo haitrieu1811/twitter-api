@@ -10,7 +10,7 @@ interface VideoStatusType {
   updated_at?: Date;
 }
 
-class VideoStatus {
+export default class VideoStatus {
   _id?: ObjectId;
   name: string;
   status: EncodingStatus;
@@ -29,5 +29,3 @@ class VideoStatus {
     this.updated_at = date;
   }
 }
-
-export default VideoStatus;

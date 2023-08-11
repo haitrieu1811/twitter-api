@@ -9,7 +9,7 @@ interface RefreshTokenType {
   exp: number;
 }
 
-class RefreshToken {
+export default class RefreshToken {
   _id?: ObjectId;
   token: string;
   created_at: Date;
@@ -26,5 +26,3 @@ class RefreshToken {
     this.exp = new Date(exp * 1000);
   }
 }
-
-export default RefreshToken;
