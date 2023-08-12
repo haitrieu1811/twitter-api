@@ -104,3 +104,11 @@ export const LIKES_MESSAGES = {
   LIKE_TWEET_SUCCEED: 'Like tweet succeed',
   UN_LIKE_TWEET_SUCCEED: 'Unlike tweet succeed'
 } as const;
+
+export const SEARCH_MESSAGES = {
+  SEARCH_SUCCEED: 'Search succeed',
+  KEYWORD_IS_REQUIRED: 'Keyword to search is required',
+  KEYWORD_MUST_BE_A_STRING: 'Keyword to search must be a string',
+  MEDIA_TYPE_IS_INVALID: 'Media type to search is invalid',
+  PEOPLE_FOLLOWED_IS_INVALID: 'People followed to search is invalid'
+} as const;

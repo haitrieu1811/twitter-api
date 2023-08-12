@@ -1,7 +1,8 @@
 import { ObjectId, WithId } from 'mongodb';
 
-import { TweetType } from '~/constants/enums';
-import { TweetPagination, TweetReqQuery, TweetRequestBody } from '~/models/requests/Tweet.requests';
+import { TweetAudience, TweetType } from '~/constants/enums';
+import { Pagination } from '~/models/requests/Common.requests';
+import { TweetReqQuery, TweetRequestBody } from '~/models/requests/Tweet.requests';
 import Hashtag from '~/models/schemas/Hashtag.schema';
 import Tweet from '~/models/schemas/Tweet.schema';
 import databaseService from './database.services';
@@ -159,7 +160,7 @@ class TweetsService {
                     input: '$tweet_childs',
                     as: 'item',
                     cond: {
-                      $eq: ['$$item.type', 1]
+                      $eq: ['$$item.type', TweetType.Retweet]
                     }
                   }
                 }
@@ -170,7 +171,7 @@ class TweetsService {
                     input: '$tweet_childs',
                     as: 'item',
                     cond: {
-                      $eq: ['$$item.type', 2]
+                      $eq: ['$$item.type', TweetType.Comment]
                     }
                   }
                 }
@@ -181,7 +182,7 @@ class TweetsService {
                     input: '$tweet_childs',
                     as: 'item',
                     cond: {
-                      $eq: ['$$item.type', 3]
+                      $eq: ['$$item.type', TweetType.QuoteTweet]
                     }
                   }
                 }
@@ -234,7 +235,7 @@ class TweetsService {
   }
 
   // Lấy danh sách newfeed
-  async getNewFeeds({ page, limit, user_id }: TweetPagination & { user_id: string }) {
+  async getNewFeeds({ page, limit, user_id }: Pagination & { user_id: string }) {
     // Lấy danh sách user_id đang theo dõi
     const followed_ids = await databaseService.followers
       .find(
@@ -281,12 +282,12 @@ class TweetsService {
             $match: {
               $or: [
                 {
-                  audience: 0
+                  audience: TweetAudience.Everyone
                 },
                 {
                   $and: [
                     {
-                      audience: 1
+                      audience: TweetAudience.TwitterCircle
                     },
                     {
                       'user.twitter_circle': {
@@ -419,28 +420,39 @@ class TweetsService {
         .aggregate([
           {
             $match: {
-              $and: [
+              user_id: {
+                $in: _followed_ids
+              }
+            }
+          },
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'user_id',
+              foreignField: '_id',
+              as: 'user'
+            }
+          },
+          {
+            $unwind: {
+              path: '$user'
+            }
+          },
+          {
+            $match: {
+              $or: [
                 {
-                  user_id: {
-                    $in: _followed_ids
-                  }
+                  audience: TweetAudience.Everyone
                 },
                 {
-                  $or: [
+                  $and: [
                     {
-                      audience: 0
+                      audience: TweetAudience.TwitterCircle
                     },
                     {
-                      $and: [
-                        {
-                          audience: 1
-                        },
-                        {
-                          'user.twitter_circle': {
-                            $in: [new ObjectId(user_id)]
-                          }
-                        }
-                      ]
+                      'user.twitter_circle': {
+                        $in: [new ObjectId(user_id)]
+                      }
                     }
                   ]
                 }
@@ -454,7 +466,7 @@ class TweetsService {
         .toArray()
     ]);
     // Tổng số lượng tweet
-    const total = total_arr[0].total as number;
+    const total = total_arr.length > 0 ? (total_arr[0].total as number) : 0;
     // Tăng view cho các tweet có trong new feeds
     const tweet_ids = tweets.map((tweet) => tweet._id as ObjectId);
     const updated_time = new Date();

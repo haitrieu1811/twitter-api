@@ -2,7 +2,8 @@ import { Request, Response } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
 
 import { TWEETS_MESSAGES } from '~/constants/messages';
-import { TweetPagination, TweetReqParams, TweetReqQuery, TweetRequestBody } from '~/models/requests/Tweet.requests';
+import { TweetReqParams, TweetReqQuery, TweetRequestBody } from '~/models/requests/Tweet.requests';
+import { Pagination } from '~/models/requests/Common.requests';
 import { TokenPayload } from '~/models/requests/User.requests';
 import tweetsService from '~/services/tweets.services';
 
@@ -58,10 +59,7 @@ export const getTweetChildrenController = async (
 };
 
 // Lấy danh sách new feeds
-export const getNewFeedsController = async (
-  req: Request<ParamsDictionary, any, any, TweetPagination>,
-  res: Response
-) => {
+export const getNewFeedsController = async (req: Request<ParamsDictionary, any, any, Pagination>, res: Response) => {
   const { page, limit } = req.query;
   const { user_id } = req.decoded_authorization as TokenPayload;
   const result = await tweetsService.getNewFeeds({ page, limit, user_id });

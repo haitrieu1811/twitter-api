@@ -12,6 +12,7 @@ import usersRouter from './routes/users.routes';
 import databaseService from './services/database.services';
 import { initFolder } from './utils/file';
 import likesRouter from './routes/likes.routes';
+import searchRouter from './routes/search.routes';
 config();
 initFolder();
 
@@ -23,6 +24,7 @@ databaseService.connect().then(() => {
   databaseService.indexHashtags();
   databaseService.indexBookmarks();
   databaseService.indexLikes();
+  databaseService.indexTweets();
 });
 const app = express();
 const port = process.env.PORT || 4000;
@@ -33,6 +35,7 @@ app.use('/users', usersRouter);
 app.use('/tweets', tweetsRouter);
 app.use('/bookmarks', bookmarksRouter);
 app.use('/likes', likesRouter);
+app.use('/search', searchRouter);
 app.use('/medias', mediasRouter);
 app.use('/static', staticRouter);
 app.use('/static/video', express.static(UPLOAD_VIDEO_DIR));

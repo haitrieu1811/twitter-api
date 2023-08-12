@@ -6,18 +6,16 @@ import {
   getTweetChildrenController,
   getTweetController
 } from '~/controllers/tweets.controller';
-import { filterMiddleware } from '~/middlewares/common.middlewares';
+import { filterMiddleware, paginationValidator } from '~/middlewares/common.middlewares';
 import {
   audienceValidator,
   createTweetValidator,
   getTweetChildrenValidator,
-  paginationValidator,
   tweetIdValidator
 } from '~/middlewares/tweets.middlewares';
-import { accessTokenValidator, verifiedUserValidator } from '~/middlewares/users.middlewares';
+import { accessTokenValidator, isUserLoggedInValidator, verifiedUserValidator } from '~/middlewares/users.middlewares';
 import { TweetRequestBody } from '~/models/requests/Tweet.requests';
 import { wrapRequestHandler } from '~/utils/handlers';
-import { isUserLoggedInValidator } from '~/middlewares/users.middlewares';
 
 const tweetsRouter = Router();
 
