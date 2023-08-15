@@ -3,18 +3,20 @@ import { config } from 'dotenv';
 import { ObjectId } from 'mongodb';
 
 import { TokenType, UserVerifyStatus } from '~/constants/enums';
+import HTTP_STATUS from '~/constants/httpStatus';
 import { USERS_MESSAGES } from '~/constants/messages';
+import { ErrorWithStatus } from '~/models/Errors';
 import { RegisterReqBody, UpdateMeReqBody } from '~/models/requests/User.requests';
 import Follower from '~/models/schemas/Follower.schema';
 import RefreshToken from '~/models/schemas/RefreshToken.schema';
 import User from '~/models/schemas/User.schema';
 import { hashPassword } from '~/utils/crypto';
+import { sendForgotPasswordEmail, sendVerifyEmail } from '~/utils/email';
 import { signToken, verifyToken } from '~/utils/jwt';
 import databaseService from './database.services';
-import { ErrorWithStatus } from '~/models/Errors';
-import HTTP_STATUS from '~/constants/httpStatus';
 config();
 class UsersService {
+  // Tạo access token
   private signAccessToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     return signToken({
       payload: {
@@ -29,6 +31,7 @@ class UsersService {
     });
   }
 
+  // Tạo refresh token
   private signRefreshToken({ user_id, verify, exp }: { user_id: string; verify: UserVerifyStatus; exp?: number }) {
     if (exp) {
       return signToken({
@@ -54,6 +57,7 @@ class UsersService {
     });
   }
 
+  // Tạo email verify token
   private signEmailVerifyToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     return signToken({
       payload: {
@@ -68,6 +72,7 @@ class UsersService {
     });
   }
 
+  // Tạo forgot password token
   private signForgotPasswordToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     return signToken({
       payload: {
@@ -82,10 +87,12 @@ class UsersService {
     });
   }
 
+  // Tạo access và refresh token
   private signAccessAndRefreshToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     return Promise.all([this.signAccessToken({ user_id, verify }), this.signRefreshToken({ user_id, verify })]);
   }
 
+  // Thêm một refresh token vào DB
   private insertRefreshToken({
     user_id,
     refresh_token,
@@ -102,6 +109,7 @@ class UsersService {
     );
   }
 
+  // Đăng ký
   async register(payload: RegisterReqBody) {
     const user_id = new ObjectId();
     const email_verify_token = await this.signEmailVerifyToken({
@@ -124,12 +132,19 @@ class UsersService {
     });
     const { iat, exp } = await this.decodeRefreshToken(refresh_token);
     await this.insertRefreshToken({ user_id: user_id.toString(), refresh_token, iat, exp });
+    // Gửi mail verify cho email vừa đăng ký
+    try {
+      await sendVerifyEmail(payload.email, email_verify_token);
+    } catch (error) {
+      console.log(error);
+    }
     return {
       access_token,
       refresh_token
     };
   }
 
+  // Đăng nhập
   async login({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken({ user_id, verify });
     const { iat, exp } = await this.decodeRefreshToken(refresh_token);
@@ -140,6 +155,7 @@ class UsersService {
     };
   }
 
+  // Lấy oauth Google token
   private async getOauthGoogleToken(code: string) {
     const body = {
       code,
@@ -159,6 +175,7 @@ class UsersService {
     };
   }
 
+  // Lấy thông tin user đăng ký bằng email trên Google
   private async getGoogleUserInfo(access_token: string, id_token: string) {
     const { data } = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
       params: {
@@ -181,6 +198,7 @@ class UsersService {
     };
   }
 
+  // Đăng nhập bằng Google
   async oauth(code: string) {
     const { access_token, id_token } = await this.getOauthGoogleToken(code);
     const userInfo = await this.getGoogleUserInfo(access_token, id_token);
@@ -222,6 +240,7 @@ class UsersService {
     }
   }
 
+  // Đăng xuất
   async logout(refresh_token: string) {
     await databaseService.refresh_tokens.deleteOne({ token: refresh_token });
     return {
@@ -229,6 +248,7 @@ class UsersService {
     };
   }
 
+  // Giải mã refresh token
   private decodeRefreshToken(refresh_token: string) {
     return verifyToken({
       token: refresh_token,
@@ -236,6 +256,7 @@ class UsersService {
     });
   }
 
+  // Refresh token
   async refreshToken({
     user_id,
     verify,
@@ -269,6 +290,7 @@ class UsersService {
     };
   }
 
+  // Xác thực email
   async verifyEmail({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     const [[access_token, refresh_token]] = await Promise.all([
       this.signAccessAndRefreshToken({ user_id, verify }),
@@ -295,11 +317,11 @@ class UsersService {
     };
   }
 
-  async resendVerifyEmail(user_id: string) {
+  // Gửi lại email xác thực có chứa email verify token
+  async resendVerifyEmail(user_id: string, email: string) {
     const email_verify_token = await this.signEmailVerifyToken({ user_id, verify: UserVerifyStatus.Unverified });
     // Gửi email
-    console.log('Resend verify email with token: ', email_verify_token);
-
+    await sendVerifyEmail(email, email_verify_token);
     // Cập nhật lại email verify token
     await databaseService.users.updateOne(
       {
@@ -319,7 +341,8 @@ class UsersService {
     };
   }
 
-  async forgotPassword({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  // Quên mật khẩu
+  async forgotPassword({ user_id, verify, email }: { user_id: string; verify: UserVerifyStatus; email: string }) {
     const forgot_password_token = await this.signForgotPasswordToken({ user_id, verify });
     await databaseService.users.updateOne(
       { _id: new ObjectId(user_id) },
@@ -332,13 +355,14 @@ class UsersService {
         }
       }
     );
-    // Giả lập gửi email
-    console.log('forgot_password_token:', forgot_password_token);
+    // Gửi mail
+    await sendForgotPasswordEmail(email, forgot_password_token);
     return {
       message: USERS_MESSAGES.CHECK_EMAIL_TO_RESET_PASSWORD
     };
   }
 
+  // Khôi phục mật khẩu
   async resetPassword(user_id: string, new_password: string) {
     await databaseService.users.updateOne(
       {
@@ -359,6 +383,7 @@ class UsersService {
     };
   }
 
+  // Lấy thông tin tài khoản đang đăng nhập
   async getMe(user_id: string) {
     const result = await databaseService.users.findOne(
       { _id: new ObjectId(user_id) },
@@ -373,11 +398,13 @@ class UsersService {
     return result;
   }
 
+  // Kiểm tra một email có tồn tại chưa
   async checkEmailExist(email: string) {
     const result = await databaseService.users.findOne({ email });
     return Boolean(result);
   }
 
+  // Cập nhật thông tin tài khoản đang đăng nhập
   async updateMe({ payload, user_id }: { payload: UpdateMeReqBody; user_id: string }) {
     const _payload = payload.date_of_birth ? { ...payload, date_of_birth: new Date(payload.date_of_birth) } : payload;
     const user = await databaseService.users.findOneAndUpdate(
@@ -404,6 +431,7 @@ class UsersService {
     return user.value;
   }
 
+  // Lấy thông tin tài khoản khác qua tên đăng nhập
   async getProfile(username: string) {
     const profile = await databaseService.users.findOne(
       { username },
@@ -421,6 +449,7 @@ class UsersService {
     return profile;
   }
 
+  // Kiểm tra một tài khoản đã follow một tài khoản khác chưa
   async checkFollowerExist({ user_id, followed_user_id }: { user_id: string; followed_user_id: string }) {
     const follower = await databaseService.followers.findOne({
       user_id: new ObjectId(user_id),
@@ -429,6 +458,7 @@ class UsersService {
     return Boolean(follower);
   }
 
+  // Follow người dùng
   async follow({ user_id, followed_user_id }: { user_id: string; followed_user_id: string }) {
     const isExist = await this.checkFollowerExist({ user_id, followed_user_id });
     if (!isExist) {
@@ -447,6 +477,7 @@ class UsersService {
     };
   }
 
+  // Bỏ follow người dùng
   async unfollow({ user_id, followed_user_id }: { user_id: string; followed_user_id: string }) {
     const isExist = await this.checkFollowerExist({ user_id, followed_user_id });
     if (isExist) {
@@ -463,6 +494,7 @@ class UsersService {
     };
   }
 
+  // Đổi mật khẩu
   async changePassword({ password, user_id }: { password: string; user_id: string }) {
     await databaseService.users.updateOne(
       {

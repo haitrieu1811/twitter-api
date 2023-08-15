@@ -58,7 +58,7 @@ export const encodeHLSWithMultipleVideoStreams = async (inputPath: string) => {
 
   const commandWithMax720 = `
   ffmpeg -y -i ${inputPath} \\
-  -preset veryslow -g 48 -crf 17 -sc_threshold 0 \
+  -preset veryslow -g 48 -crf 17 -sc_threshold 0 \\
   -map 0:0 -map 0:1 \\
   -s:v:0 ${getWidth(720, resolution)}x720 -c:v:0 libx264 -b:v:0 ${bitrate720} \\
   -c:a copy \\
@@ -71,7 +71,7 @@ export const encodeHLSWithMultipleVideoStreams = async (inputPath: string) => {
 
   const commandWithMax1080 = `
   ffmpeg -y -i ${inputPath} \\
-  -preset veryslow -g 48 -crf 17 -sc_threshold 0 \
+  -preset veryslow -g 48 -crf 17 -sc_threshold 0 \\
   -map 0:0 -map 0:1 -map 0:0 -map 0:1 \\
   -s:v:0 ${getWidth(720, resolution)}x720 -c:v:0 libx264 -b:v:0 ${bitrate720} \\
   -s:v:1 ${getWidth(1080, resolution)}x1080 -c:v:1 libx264 -b:v:1 ${bitrate1080} \\
@@ -85,7 +85,7 @@ export const encodeHLSWithMultipleVideoStreams = async (inputPath: string) => {
 
   const commandWithMax1440 = `
   ffmpeg -y -i ${inputPath} \\
-  -preset veryslow -g 48 -crf 17 -sc_threshold 0 \
+  -preset veryslow -g 48 -crf 17 -sc_threshold 0 \\
   -map 0:0 -map 0:1 -map 0:0 -map 0:1 -map 0:0 -map 0:1 \\
   -s:v:0 ${getWidth(720, resolution)}x720 -c:v:0 libx264 -b:v:0 ${bitrate720} \\
   -s:v:1 ${getWidth(1080, resolution)}x1080 -c:v:1 libx264 -b:v:1 ${bitrate1080} \\
@@ -100,7 +100,7 @@ export const encodeHLSWithMultipleVideoStreams = async (inputPath: string) => {
 
   const commandWithOriginalWidth = `
 ffmpeg -y -i ${inputPath} \\
--preset veryslow -g 48 -crf 17 -sc_threshold 0 \
+-preset veryslow -g 48 -crf 17 -sc_threshold 0 \\
 -map 0:0 -map 0:1 -map 0:0 -map 0:1 -map 0:0 -map 0:1 \\
 -s:v:0 ${getWidth(720, resolution)}x720 -c:v:0 libx264 -b:v:0 ${bitrate720} \\
 -s:v:1 ${getWidth(1080, resolution)}x1080 -c:v:1 libx264 -b:v:1 ${bitrate1080} \\
@@ -124,7 +124,7 @@ ${outputPath}
     command = commandWithOriginalWidth;
   }
 
-  console.log('>>> command', command);
+  console.log('>>> Command', command);
 
   return new Promise((resolve, reject) => {
     exec(command, (err, stdout, stderr) => {

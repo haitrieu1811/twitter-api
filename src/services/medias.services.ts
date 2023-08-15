@@ -1,18 +1,22 @@
+import { CompleteMultipartUploadOutput } from '@aws-sdk/client-s3';
 import { config } from 'dotenv';
 import { Request } from 'express';
 import fs from 'fs';
 import fsPromise from 'fs/promises';
+import mime from 'mime';
 import path from 'path';
 import sharp from 'sharp';
 
 import { isProduction } from '~/constants/config';
-import { UPLOAD_IMAGE_DIR } from '~/constants/dir';
+import { UPLOAD_IMAGE_DIR, UPLOAD_VIDEO_DIR } from '~/constants/dir';
 import { EncodingStatus, MediaType } from '~/constants/enums';
 import { Media } from '~/models/Other';
+import VideoStatus from '~/models/schemas/VideoStatus.schema';
 import { getNameFromFullname, handleUploadImage, handleUploadVideo } from '~/utils/file';
+import { uploadFileToS3 } from '~/utils/s3';
 import { encodeHLSWithMultipleVideoStreams } from '~/utils/video';
 import databaseService from './database.services';
-import VideoStatus from '~/models/schemas/VideoStatus.schema';
+import { getFiles } from '~/utils/file';
 config();
 
 class Queue {
@@ -26,10 +30,10 @@ class Queue {
 
   async enqueue(item: string) {
     this.items.push(item);
-    const name = getNameFromFullname(item.split('\\').pop() as string);
+    const idName = getNameFromFullname(item.split('\\').pop() as string);
     await databaseService.videoStatus.insertOne(
       new VideoStatus({
-        name,
+        name: idName,
         status: EncodingStatus.Pending
       })
     );
@@ -41,10 +45,10 @@ class Queue {
     if (this.items.length > 0) {
       this.encoding = true;
       const videoPath = this.items[0];
-      const name = getNameFromFullname(videoPath.split('\\').pop() as string);
+      const idName = getNameFromFullname(videoPath.split('\\').pop() as string);
       await databaseService.videoStatus.updateOne(
         {
-          name
+          name: idName
         },
         {
           $set: {
@@ -59,9 +63,12 @@ class Queue {
         await encodeHLSWithMultipleVideoStreams(videoPath);
         this.items.shift();
         // await fsPromise.unlink(videoPath);
+        const files = getFiles(path.resolve(UPLOAD_VIDEO_DIR, idName));
+        console.log('>>> files', files);
+
         await databaseService.videoStatus.updateOne(
           {
-            name
+            name: idName
           },
           {
             $set: {
@@ -77,7 +84,7 @@ class Queue {
         await databaseService.videoStatus
           .updateOne(
             {
-              name
+              name: idName
             },
             {
               $set: {
@@ -104,45 +111,69 @@ class Queue {
 const queue = new Queue();
 
 class MediasService {
+  // Upload hình ảnh
   async handleUploadImage(req: Request) {
     const images = await handleUploadImage(req);
     const result: Media[] = await Promise.all(
       images.map(async (image) => {
-        const newName = `${image.newFilename}.jpg`;
-        const newPath = path.resolve(UPLOAD_IMAGE_DIR, newName);
+        const newName = getNameFromFullname(image.newFilename);
+        const newFullName = `${newName}.jpg`;
+        const newPath = path.resolve(UPLOAD_IMAGE_DIR, newFullName);
         await sharp(image.filepath).jpeg().toFile(newPath);
-        fs.unlinkSync(image.filepath);
+        const s3Result = await uploadFileToS3({
+          filename: `images/${newFullName}`,
+          filepath: newPath,
+          contentType: mime.getType(newPath) as string
+        });
+        await Promise.all([fsPromise.unlink(image.filepath), fsPromise.unlink(newPath)]);
         return {
-          url: isProduction
-            ? `${process.env.HOST}/static/image/${newName}.jpg`
-            : `http://localhost:${process.env.PORT}/static/image/${newName}.jpg`,
+          url: (s3Result as CompleteMultipartUploadOutput).Location as string,
           type: MediaType.Image
         };
+        // return {
+        //   url: isProduction
+        //     ? `${process.env.HOST}/static/image/${newFullName}`
+        //     : `http://localhost:${process.env.PORT}/static/image/${newFullName}`,
+        //   type: MediaType.Image
+        // };
       })
     );
     return result;
   }
 
+  // Upload video
   async handleUploadVideo(req: Request) {
     const videos = await handleUploadVideo(req);
-    const result: Media[] = videos.map((video) => {
-      return {
-        url: isProduction
-          ? `${process.env.HOST}/static/video-stream/${video.newFilename}`
-          : `http://localhost:${process.env.PORT}/static/video-stream/${video.newFilename}`,
-        type: MediaType.Video
-      };
-    });
+    const result: Media[] = await Promise.all(
+      videos.map(async (video) => {
+        const s3Result = await uploadFileToS3({
+          filename: `videos/${video.newFilename}`,
+          filepath: video.filepath,
+          contentType: mime.getType(video.filepath) as string
+        });
+        fs.unlinkSync(video.filepath);
+        return {
+          url: (s3Result as CompleteMultipartUploadOutput).Location as string,
+          type: MediaType.Video
+        };
+        // return {
+        //   url: isProduction
+        //     ? `${process.env.HOST}/static/video-stream/${video.newFilename}`
+        //     : `http://localhost:${process.env.PORT}/static/video-stream/${video.newFilename}`,
+        //   type: MediaType.Video
+        // };
+      })
+    );
     return result;
   }
 
+  // Upload video HLS
   async handleUploadVideoHLS(req: Request) {
     const videos = await handleUploadVideo(req);
     const result: Media[] = await Promise.all(
       videos.map(async (video) => {
         const fileName = getNameFromFullname(video.newFilename);
-        const filepathConverted = video.filepath.replace(/\\/g, '/');
-        queue.enqueue(filepathConverted);
+        queue.enqueue(video.filepath.replace(/\\/g, '/'));
         return {
           url: isProduction
             ? `${process.env.HOST}/static/video-hls/${fileName}/master.m3u8`
@@ -154,6 +185,7 @@ class MediasService {
     return result;
   }
 
+  // Lấy video status
   async getVideoStatus(idName: string) {
     const data = await databaseService.videoStatus.findOne({ name: idName });
     return data;
