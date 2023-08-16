@@ -51,10 +51,37 @@ const io = new Server(httpServer, {
   }
 });
 
+const users: {
+  [key: string]: {
+    socket_id: string;
+  };
+} = {};
+
+// Kết nối
 io.on('connection', (socket) => {
   console.log(`User ${socket.id} connected`);
+
+  const user_id = socket.handshake.auth._id;
+  users[user_id] = {
+    socket_id: socket.id
+  };
+
+  // Gửi tin nhắn
+  socket.on('private message', (data) => {
+    console.log(data);
+    const receiver_socket_id = users[data.to].socket_id;
+    console.log('>>> receiver_socket_id', receiver_socket_id);
+    socket.to(receiver_socket_id).emit('receive private message', {
+      content: data.content,
+      from: user_id
+    });
+  });
+
+  // Ngắt kết nối
   socket.on('disconnect', () => {
+    delete users[user_id];
     console.log(`User ${socket.id} disconnected`);
+    console.log(users);
   });
 });
 
