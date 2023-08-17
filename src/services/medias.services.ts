@@ -6,6 +6,7 @@ import fsPromise from 'fs/promises';
 import mime from 'mime';
 import path from 'path';
 import sharp from 'sharp';
+import { rimrafSync } from 'rimraf';
 
 import { isProduction } from '~/constants/config';
 import { UPLOAD_IMAGE_DIR, UPLOAD_VIDEO_DIR } from '~/constants/dir';
@@ -62,10 +63,19 @@ class Queue {
       try {
         await encodeHLSWithMultipleVideoStreams(videoPath);
         this.items.shift();
-        // await fsPromise.unlink(videoPath);
+        fs.unlinkSync(videoPath);
         const files = getFiles(path.resolve(UPLOAD_VIDEO_DIR, idName));
-        console.log('>>> files', files);
-
+        await Promise.all(
+          files.map((filepath) => {
+            const filename = `videos-hls${filepath.replace(path.resolve(UPLOAD_VIDEO_DIR), '').replace(/\\/g, '/')}`;
+            return uploadFileToS3({
+              filepath,
+              filename,
+              contentType: mime.getType(filepath) as string
+            });
+          })
+        );
+        rimrafSync(path.resolve(UPLOAD_VIDEO_DIR, idName));
         await databaseService.videoStatus.updateOne(
           {
             name: idName
@@ -108,6 +118,7 @@ class Queue {
     }
   }
 }
+
 const queue = new Queue();
 
 class MediasService {
@@ -173,7 +184,7 @@ class MediasService {
     const result: Media[] = await Promise.all(
       videos.map(async (video) => {
         const fileName = getNameFromFullname(video.newFilename);
-        queue.enqueue(video.filepath.replace(/\\/g, '/'));
+        queue.enqueue(video.filepath);
         return {
           url: isProduction
             ? `${process.env.HOST}/static/video-hls/${fileName}/master.m3u8`

@@ -112,3 +112,7 @@ export const SEARCH_MESSAGES = {
   MEDIA_TYPE_IS_INVALID: 'Media type to search is invalid',
   PEOPLE_FOLLOWED_IS_INVALID: 'People followed to search is invalid'
 } as const;
+
+export const CONVERSATIONS_MESSAGES = {
+  GET_CONVERSATIONS_SUCCEED: 'Get conversations succeed'
+} as const;

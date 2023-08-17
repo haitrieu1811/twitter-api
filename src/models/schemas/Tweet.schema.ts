@@ -34,20 +34,34 @@ export default class Tweet {
   created_at: Date;
   updated_at: Date;
 
-  constructor(tweet: TweetConstructor) {
+  constructor({
+    _id,
+    user_id,
+    type,
+    audience,
+    content,
+    parent_id,
+    hashtags,
+    mentions,
+    medias,
+    guest_views,
+    user_views,
+    created_at,
+    updated_at
+  }: TweetConstructor) {
     const date = new Date();
-    this._id = tweet._id;
-    this.user_id = tweet.user_id;
-    this.type = tweet.type;
-    this.audience = tweet.audience;
-    this.content = tweet.content;
-    this.parent_id = tweet.parent_id ? new ObjectId(tweet.parent_id) : null; //  chỉ null khi tweet gốc
-    this.hashtags = tweet.hashtags.map((hashtag) => new ObjectId(hashtag));
-    this.mentions = tweet.mentions.map((mention) => new ObjectId(mention));
-    this.medias = tweet.medias;
-    this.guest_views = tweet.guest_views || 0;
-    this.user_views = tweet.user_views || 0;
-    this.created_at = tweet.created_at || date;
-    this.updated_at = tweet.updated_at || date;
+    this._id = _id;
+    this.user_id = user_id;
+    this.type = type;
+    this.audience = audience;
+    this.content = content;
+    this.parent_id = parent_id ? new ObjectId(parent_id) : null; //  chỉ null khi tweet gốc
+    this.hashtags = hashtags.map((hashtag) => new ObjectId(hashtag));
+    this.mentions = mentions.map((mention) => new ObjectId(mention));
+    this.medias = medias;
+    this.guest_views = guest_views || 0;
+    this.user_views = user_views || 0;
+    this.created_at = created_at || date;
+    this.updated_at = updated_at || date;
   }
 }

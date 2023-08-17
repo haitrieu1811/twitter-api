@@ -13,10 +13,10 @@ export default class Like {
   tweet_id: ObjectId;
   created_at: Date;
 
-  constructor(like: LikeConstructor) {
-    this._id = like._id || new ObjectId();
-    this.user_id = new ObjectId(like.user_id);
-    this.tweet_id = new ObjectId(like.tweet_id);
-    this.created_at = like.created_at || new Date();
+  constructor({ _id, user_id, tweet_id, created_at }: LikeConstructor) {
+    this._id = _id || new ObjectId();
+    this.user_id = new ObjectId(user_id);
+    this.tweet_id = new ObjectId(tweet_id);
+    this.created_at = created_at || new Date();
   }
 }

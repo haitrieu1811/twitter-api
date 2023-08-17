@@ -42,26 +42,44 @@ export default class User {
   avatar?: string; // optional
   cover_photo?: string; // optional
 
-  constructor(user: UserType) {
+  constructor({
+    _id,
+    name,
+    email,
+    date_of_birth,
+    password,
+    created_at,
+    updated_at,
+    email_verify_token,
+    forgot_password_token,
+    verify,
+    twitter_circle,
+    bio,
+    location,
+    website,
+    username,
+    avatar,
+    cover_photo
+  }: UserType) {
     const date = new Date();
 
-    this._id = user._id;
-    this.name = user.name || '';
-    this.email = user.email || '';
-    this.date_of_birth = user.date_of_birth || new Date();
-    this.password = user.password || '';
-    this.created_at = user.created_at || date;
-    this.updated_at = user.updated_at || date;
-    this.email_verify_token = user.email_verify_token || '';
-    this.forgot_password_token = user.forgot_password_token || '';
-    this.verify = user.verify || UserVerifyStatus.Unverified;
-    this.twitter_circle = user.twitter_circle ? user.twitter_circle.map((item) => new ObjectId(item)) : [];
+    this._id = _id;
+    this.name = name || '';
+    this.email = email || '';
+    this.date_of_birth = date_of_birth || new Date();
+    this.password = password || '';
+    this.created_at = created_at || date;
+    this.updated_at = updated_at || date;
+    this.email_verify_token = email_verify_token || '';
+    this.forgot_password_token = forgot_password_token || '';
+    this.verify = verify || UserVerifyStatus.Unverified;
+    this.twitter_circle = twitter_circle ? twitter_circle.map((item) => new ObjectId(item)) : [];
 
-    this.bio = user.bio || '';
-    this.location = user.location || '';
-    this.website = user.website || '';
-    this.username = user.username || '';
-    this.avatar = user.avatar || '';
-    this.cover_photo = user.cover_photo || '';
+    this.bio = bio || '';
+    this.location = location || '';
+    this.website = website || '';
+    this.username = username || '';
+    this.avatar = avatar || '';
+    this.cover_photo = cover_photo || '';
   }
 }

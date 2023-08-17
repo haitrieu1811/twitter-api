@@ -11,9 +11,9 @@ export default class Hashtag {
   name: string;
   created_at: Date;
 
-  constructor(hashtag: HashtagConstructor) {
-    this._id = hashtag._id || new ObjectId();
-    this.name = hashtag.name;
-    this.created_at = hashtag.created_at || new Date();
+  constructor({ _id, name, created_at }: HashtagConstructor) {
+    this._id = _id || new ObjectId();
+    this.name = name;
+    this.created_at = created_at || new Date();
   }
 }

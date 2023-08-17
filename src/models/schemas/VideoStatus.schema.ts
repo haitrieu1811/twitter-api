@@ -18,13 +18,12 @@ export default class VideoStatus {
   created_at: Date;
   updated_at: Date;
 
-  constructor(videoStatus: VideoStatusType) {
+  constructor({ _id, name, status, message }: VideoStatusType) {
     const date = new Date();
-
-    this._id = videoStatus._id;
-    this.name = videoStatus.name;
-    this.status = videoStatus.status;
-    this.message = videoStatus.message || '';
+    this._id = _id;
+    this.name = name;
+    this.status = status;
+    this.message = message || '';
     this.created_at = date;
     this.updated_at = date;
   }

@@ -13,10 +13,10 @@ export default class Bookmark {
   tweet_id: ObjectId;
   created_at: Date;
 
-  constructor(bookmark: BookmarkConstructor) {
-    this._id = bookmark._id || new ObjectId();
-    this.user_id = new ObjectId(bookmark.user_id);
-    this.tweet_id = new ObjectId(bookmark.tweet_id);
-    this.created_at = bookmark.created_at || new Date();
+  constructor({ _id, user_id, tweet_id, created_at }: BookmarkConstructor) {
+    this._id = _id || new ObjectId();
+    this.user_id = new ObjectId(user_id);
+    this.tweet_id = new ObjectId(tweet_id);
+    this.created_at = created_at || new Date();
   }
 }
