@@ -9,6 +9,7 @@ import { TWEETS_MESSAGES, USERS_MESSAGES } from '~/constants/messages';
 import { ErrorWithStatus } from '~/models/Errors';
 import { verifyToken } from '~/utils/jwt';
 import { validate } from '~/utils/validation';
+import { ENV_CONFIG } from '~/constants/config';
 
 type FilterKeys<T> = Array<keyof T>;
 
@@ -70,7 +71,7 @@ export const verifyAccessToken = async (access_token: string, req?: Request) => 
   try {
     const decoded_authorization = await verifyToken({
       token: access_token,
-      secretOrPublicKey: process.env.JWT_SECRET_ACCESS_TOKEN as string
+      secretOrPublicKey: ENV_CONFIG.JWT_SECRET_ACCESS_TOKEN
     });
     if (req) {
       (req as Request).decoded_authorization = decoded_authorization;

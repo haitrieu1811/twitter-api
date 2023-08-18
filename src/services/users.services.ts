@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { config } from 'dotenv';
 import { ObjectId } from 'mongodb';
 
 import { TokenType, UserVerifyStatus } from '~/constants/enums';
@@ -14,7 +13,7 @@ import { hashPassword } from '~/utils/crypto';
 import { sendForgotPasswordEmail, sendVerifyEmail } from '~/utils/email';
 import { signToken, verifyToken } from '~/utils/jwt';
 import databaseService from './database.services';
-config();
+import { ENV_CONFIG } from '~/constants/config';
 class UsersService {
   // Tạo access token
   private signAccessToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
@@ -24,9 +23,9 @@ class UsersService {
         token_type: TokenType.AccessToken,
         verify
       },
-      privateKey: process.env.JWT_SECRET_ACCESS_TOKEN as string,
+      privateKey: ENV_CONFIG.JWT_SECRET_ACCESS_TOKEN,
       options: {
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN
+        expiresIn: ENV_CONFIG.ACCESS_TOKEN_EXPIRES_IN
       }
     });
   }
@@ -41,7 +40,7 @@ class UsersService {
           verify,
           exp
         },
-        privateKey: process.env.JWT_SECRET_REFRESH_TOKEN as string
+        privateKey: ENV_CONFIG.JWT_SECRET_REFRESH_TOKEN
       });
     }
     return signToken({
@@ -50,9 +49,9 @@ class UsersService {
         token_type: TokenType.RefreshToken,
         verify
       },
-      privateKey: process.env.JWT_SECRET_REFRESH_TOKEN as string,
+      privateKey: ENV_CONFIG.JWT_SECRET_REFRESH_TOKEN,
       options: {
-        expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN
+        expiresIn: ENV_CONFIG.REFRESH_TOKEN_EXPIRES_IN
       }
     });
   }
@@ -65,9 +64,9 @@ class UsersService {
         toke_type: TokenType.EmailVerifyToken,
         verify
       },
-      privateKey: process.env.JWT_SECRET_EMAIL_VERIFY_TOKEN as string,
+      privateKey: ENV_CONFIG.JWT_SECRET_EMAIL_VERIFY_TOKEN,
       options: {
-        expiresIn: process.env.VERIFY_EMAIL_TOKEN_EXPIRES_IN
+        expiresIn: ENV_CONFIG.VERIFY_EMAIL_TOKEN_EXPIRES_IN
       }
     });
   }
@@ -80,9 +79,9 @@ class UsersService {
         token_type: TokenType.ForgotPasswordToken,
         verify
       },
-      privateKey: process.env.JWT_SECRET_FORGOT_PASSWORD_TOKEN as string,
+      privateKey: ENV_CONFIG.JWT_SECRET_FORGOT_PASSWORD_TOKEN,
       options: {
-        expiresIn: process.env.FORGOT_PASSWORD_TOKEN_EXPIRES_IN
+        expiresIn: ENV_CONFIG.FORGOT_PASSWORD_TOKEN_EXPIRES_IN
       }
     });
   }
@@ -159,9 +158,9 @@ class UsersService {
   private async getOauthGoogleToken(code: string) {
     const body = {
       code,
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+      client_id: ENV_CONFIG.GOOGLE_CLIENT_ID,
+      client_secret: ENV_CONFIG.GOOGLE_CLIENT_SECRET,
+      redirect_uri: ENV_CONFIG.GOOGLE_REDIRECT_URI,
       grant_type: 'authorization_code'
     };
     const { data } = await axios.post('https://oauth2.googleapis.com/token', body, {
@@ -252,7 +251,7 @@ class UsersService {
   private decodeRefreshToken(refresh_token: string) {
     return verifyToken({
       token: refresh_token,
-      secretOrPublicKey: process.env.JWT_SECRET_REFRESH_TOKEN as string
+      secretOrPublicKey: ENV_CONFIG.JWT_SECRET_REFRESH_TOKEN
     });
   }
 

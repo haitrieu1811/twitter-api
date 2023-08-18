@@ -1,24 +1,21 @@
 import { CompleteMultipartUploadOutput } from '@aws-sdk/client-s3';
-import { config } from 'dotenv';
 import { Request } from 'express';
 import fs from 'fs';
 import fsPromise from 'fs/promises';
 import mime from 'mime';
 import path from 'path';
-import sharp from 'sharp';
 import { rimrafSync } from 'rimraf';
+import sharp from 'sharp';
 
-import { isProduction } from '~/constants/config';
+import { ENV_CONFIG } from '~/constants/config';
 import { UPLOAD_IMAGE_DIR, UPLOAD_VIDEO_DIR } from '~/constants/dir';
 import { EncodingStatus, MediaType } from '~/constants/enums';
 import { Media } from '~/models/Other';
 import VideoStatus from '~/models/schemas/VideoStatus.schema';
-import { getNameFromFullname, handleUploadImage, handleUploadVideo } from '~/utils/file';
+import { getFiles, getNameFromFullname, handleUploadImage, handleUploadVideo } from '~/utils/file';
 import { uploadFileToS3 } from '~/utils/s3';
 import { encodeHLSWithMultipleVideoStreams } from '~/utils/video';
 import databaseService from './database.services';
-import { getFiles } from '~/utils/file';
-config();
 
 class Queue {
   items: string[];
@@ -141,12 +138,6 @@ class MediasService {
           url: (s3Result as CompleteMultipartUploadOutput).Location as string,
           type: MediaType.Image
         };
-        // return {
-        //   url: isProduction
-        //     ? `${process.env.HOST}/static/image/${newFullName}`
-        //     : `http://localhost:${process.env.PORT}/static/image/${newFullName}`,
-        //   type: MediaType.Image
-        // };
       })
     );
     return result;
@@ -167,12 +158,6 @@ class MediasService {
           url: (s3Result as CompleteMultipartUploadOutput).Location as string,
           type: MediaType.Video
         };
-        // return {
-        //   url: isProduction
-        //     ? `${process.env.HOST}/static/video-stream/${video.newFilename}`
-        //     : `http://localhost:${process.env.PORT}/static/video-stream/${video.newFilename}`,
-        //   type: MediaType.Video
-        // };
       })
     );
     return result;
@@ -186,9 +171,7 @@ class MediasService {
         const fileName = getNameFromFullname(video.newFilename);
         queue.enqueue(video.filepath);
         return {
-          url: isProduction
-            ? `${process.env.HOST}/static/video-hls/${fileName}/master.m3u8`
-            : `http://localhost:${process.env.PORT}/static/video-hls/${fileName}/master.m3u8`,
+          url: `${ENV_CONFIG.HOST}/static/video-hls/${fileName}/master.m3u8`,
           type: MediaType.HLS
         };
       })

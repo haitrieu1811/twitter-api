@@ -1,22 +1,21 @@
-import { Server } from 'socket.io';
 import { Server as HttpServer } from 'http';
-import { config } from 'dotenv';
+import { Server } from 'socket.io';
 
-import { verifyAccessToken } from '~/middlewares/common.middlewares';
-import { TokenPayload } from '~/models/requests/User.requests';
+import { ENV_CONFIG } from '~/constants/config';
 import { UserVerifyStatus } from '~/constants/enums';
-import { ErrorWithStatus } from '~/models/Errors';
-import { USERS_MESSAGES } from '~/constants/messages';
 import HTTP_STATUS from '~/constants/httpStatus';
+import { USERS_MESSAGES } from '~/constants/messages';
+import { verifyAccessToken } from '~/middlewares/common.middlewares';
+import { ErrorWithStatus } from '~/models/Errors';
+import { TokenPayload } from '~/models/requests/User.requests';
 import Conversation from '~/models/schemas/Conversation.schema';
 import databaseService from '~/services/database.services';
-config();
 
 const initSocket = (httpServer: HttpServer) => {
   // Server instance
   const io = new Server(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL
+      origin: ENV_CONFIG.CLIENT_URL
     }
   });
 

@@ -1,7 +1,10 @@
 import cors from 'cors';
-import { config } from 'dotenv';
 import express from 'express';
+import fs from 'fs';
 import { createServer } from 'http';
+import path from 'path';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yaml';
 
 import { UPLOAD_VIDEO_DIR } from './constants/dir';
 import { defaultErrorHandler } from './middlewares/error.middlewares';
@@ -17,7 +20,7 @@ import databaseService from './services/database.services';
 import { initFolder } from './utils/file';
 import './utils/s3';
 import initSocket from './utils/socket';
-config();
+import { ENV_CONFIG } from './constants/config';
 initFolder();
 
 databaseService.connect().then(() => {
@@ -32,10 +35,13 @@ databaseService.connect().then(() => {
 });
 const app = express();
 const httpServer = createServer(app);
-const port = process.env.PORT || 4000;
+const port = ENV_CONFIG.PORT || 4000;
+const file = fs.readFileSync(path.resolve('twitter-swagger.yaml'), 'utf8');
+const swaggerDocument = YAML.parse(file);
 
 app.use(cors());
 app.use(express.json());
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/users', usersRouter);
 app.use('/tweets', tweetsRouter);
 app.use('/bookmarks', bookmarksRouter);

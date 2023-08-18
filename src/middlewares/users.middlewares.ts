@@ -1,4 +1,3 @@
-import { config } from 'dotenv';
 import { NextFunction, Request, Response } from 'express';
 import { ParamSchema, checkSchema } from 'express-validator';
 import { JsonWebTokenError } from 'jsonwebtoken';
@@ -17,7 +16,7 @@ import { hashPassword } from '~/utils/crypto';
 import { verifyToken } from '~/utils/jwt';
 import { validate } from '~/utils/validation';
 import { verifyAccessToken } from './common.middlewares';
-config();
+import { ENV_CONFIG } from '~/constants/config';
 
 const passwordSchema: ParamSchema = {
   notEmpty: {
@@ -93,7 +92,7 @@ const forgotPasswordTokenSchema: ParamSchema = {
       try {
         const decoded_forgot_password_token = await verifyToken({
           token: value,
-          secretOrPublicKey: process.env.JWT_SECRET_FORGOT_PASSWORD_TOKEN as string
+          secretOrPublicKey: ENV_CONFIG.JWT_SECRET_FORGOT_PASSWORD_TOKEN
         });
         const { user_id } = decoded_forgot_password_token;
         const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) });
@@ -291,7 +290,7 @@ export const refreshTokenValidator = validate(
             }
             try {
               const [decoded_refresh_token, refresh_token] = await Promise.all([
-                verifyToken({ token: value, secretOrPublicKey: process.env.JWT_SECRET_REFRESH_TOKEN as string }),
+                verifyToken({ token: value, secretOrPublicKey: ENV_CONFIG.JWT_SECRET_REFRESH_TOKEN }),
                 databaseService.refresh_tokens.findOne({ token: value })
               ]);
               if (refresh_token === null) {
@@ -335,7 +334,7 @@ export const emailVerifyTokenValidator = validate(
             try {
               const decoded_email_verify_token = await verifyToken({
                 token: value,
-                secretOrPublicKey: process.env.JWT_SECRET_EMAIL_VERIFY_TOKEN as string
+                secretOrPublicKey: ENV_CONFIG.JWT_SECRET_EMAIL_VERIFY_TOKEN
               });
               (req as Request).decoded_email_verify_token = decoded_email_verify_token;
             } catch (error) {

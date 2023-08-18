@@ -1,0 +1,335 @@
+openapi: 3.0.3
+info:
+  title: X (Twitter) Clone Api - OpenAPI 3.0
+  description: |-
+    Đây là dự án backend của X (Twitter) Clone
+  # termsOfService: http://swagger.io/terms/
+  contact:
+    email: haitrieu2524@gmail.com
+  # license:
+  #   name: Apache 2.0
+  #   url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.11
+# externalDocs:
+#   description: Find out more about Swagger
+#   url: http://swagger.io
+servers:
+  - url: http://localhost:4000
+
+tags:
+  - name: users
+    description: Các chức năng liên quan đến user (người dùng)
+
+paths:
+  # Đăng ký
+  /users/register:
+    post:
+      tags:
+        - users
+      summary: 'Đăng ký'
+      description: 'Đăng ký một tài khoản mới trên hệ thống'
+      operationId: register
+      requestBody:
+        description: 'Thông tin gửi lên server để tạo tài khoản'
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: 'Triều Trần'
+                email:
+                  type: string
+                  format: email
+                  example: 'haitrieu16@gmail.com'
+                password:
+                  type: string
+                  example: '123456aA-'
+                confirm_password:
+                  type: string
+                  example: '123456aA-'
+                date_of_birth:
+                  type: string
+                  format: date-time
+                  example: '2023-06-18T08:16:31.083Z'
+      responses:
+        default:
+          description: 'Đăng ký tài khoản thành công'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Register success'
+                  result:
+                    $ref: '#/components/schemas/AuthenticationSucceed'
+  # Đăng nhập
+  /users/login:
+    post:
+      tags:
+        - users
+      summary: Đăng nhập
+      description: Đăng nhập tài khoản cho một user
+      operationId: login
+      requestBody:
+        description: Thông tin đăng nhập
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: haitrieu2527+12@gmail.com
+                password:
+                  type: string
+                  example: 123456aA-
+        required: true
+      responses:
+        default:
+          description: Đăng nhập thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Login success
+                  result:
+                    $ref: '#/components/schemas/AuthenticationSucceed'
+  # Lấy thông tin tài khoản đang đăng nhập
+  /users/me:
+    get:
+      tags:
+        - users
+      summary: Tài khoản đăng nhập
+      description: Lấy thông tin của tài khoản đang đăng nhập
+      operationId: getMe
+      responses:
+        default:
+          description: Lấy thông tin tài khoản đăng nhập thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Get my profile success
+                  result:
+                    $ref: '#/components/schemas/User'
+      security:
+        - BearerAuth: []
+  # Đăng xuất
+  /users/logout:
+    post:
+      tags:
+        - users
+      summary: Đăng xuất
+      description: Đăng xuất phiên làm việc của tài khoản'
+      requestBody:
+        description: Gửi lên server refresh_token để server xóa đi refresh_token cũ và thay thế bằng refresh_token mới khi người dùng đăng nhập lại
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjRkYjIzNmY1YzMxNjQwZDhmYTAzNGYyIiwidG9rZW5fdHlwZSI6MSwidmVyaWZ5IjoxLCJpYXQiOjE2OTIzMzM0MjYsImV4cCI6MTcwMDk3MzQyNn0.snrJskhdQq2ppaRfJqgzCd7540Q2SxCNZD9Nf6XZQm8'
+      responses:
+        default:
+          description: 'Đăng xuất thành công'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Logout success'
+      security:
+        - BearerAuth: []
+  # Xác thực email
+  /users/verify-email:
+    post:
+      tags:
+        - users
+      summary: 'Xác thực email'
+      description: 'Thực hiện xác thực email để người dùng có thể thực hiện những chức năng mà chỉ khi đã xác thực email mới có thể xử dụng'
+      requestBody:
+        description: 'Truyền lên email_verify_token - email_verify_token có ngay sau khi tạo tài khoản thành công'
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email_verify_token:
+                  type: string
+                  example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjQ5MDBhYTBmNjNiZGZlN2E3MTJlNDViIiwidG9rZV90eXBlIjozLCJpYXQiOjE2ODcyNzE5ODAsImV4cCI6MTY4Nzg3Njc4MH0.fLUR-xbIJRC0w8VD01Mi1YVY5Hs7SOy2_QU9mSb4LuQ'
+      responses:
+        default:
+          description: 'Xác thực email thành công'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Email verify success'
+                  result:
+                    $ref: '#/components/schemas/AuthenticationSucceed'
+  # Gửi lại email xác thực
+  /users/resend-verify-email:
+    post:
+      tags:
+        - users
+      summary: 'Gửi lại email xác thực'
+      description: 'Thực hiện gửi lại email xác thực tài khoản khi người dùng có thể đã xóa nhầm mail hoặc mail đã hết hạn để xác thực'
+      responses:
+        default:
+          description: 'Gửi lại email xác thực thành công'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Resend verify email success'
+      security:
+        - BearerAuth: []
+  # Quên mật khẩu
+  /users/forgot-password:
+    post:
+      tags:
+        - users
+      summary: 'Quên mật khẩu'
+      description: 'Gửi yêu cầu quên mật khẩu để được nhận mail đặt lại mật khẩu'
+      requestBody:
+        description: 'Người dùng cần nhập email dùng để tạo tài khoản và gửi lên server'
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: 'haitrieu2527+11@gmail.com'
+      responses:
+        default:
+          description: 'Gửi yêu cầu đặt lại mật khẩu thành công'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Check email to reset password'
+  # Xác thực forgot_password_token
+  /users/verify-forgot-password-token:
+    post:
+      tags:
+        - users
+      summary: 'Xác thực forgot_password_token'
+      description: 'Xác thực forgot_password_token, nếu token hợp lệ và còn hạn sử dụng thì cho phép người dùng đặt lại mật khẩu'
+      requestBody:
+        description: 'Truyền lên forgot_password_token và xác thực forgot_password_token'
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                forgot_password_token:
+                  type: string
+                  example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjRkYjIzMjQ1YzMxNjQwZDhmYTAzNGVmIiwidG9rZW5fdHlwZSI6MiwidmVyaWZ5IjoxLCJpYXQiOjE2OTIzMzUzNDEsImV4cCI6MTY5Mjk0MDE0MX0.zXjsTb1EhZtyoqTIiDhqRXESlTOPwYCVZM59Gm3T4NM'
+      responses:
+        default:
+          description: 'Xác thực forgot_password_token thành công'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Verify forgot password success'
+
+components:
+  schemas:
+    AuthenticationSucceed:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjRkYjIzNmY1YzMxNjQwZDhmYTAzNGYyIiwidG9rZW5fdHlwZSI6MCwidmVyaWZ5IjoxLCJpYXQiOjE2OTIzMjQxNjcsImV4cCI6MTY5MjMyNTA2N30.LrZWFP6j_K7CPGwiZMuLlOmeXktUEWVj-yKSAS64mEk
+        refresh_token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjRkYjIzNmY1YzMxNjQwZDhmYTAzNGYyIiwidG9rZW5fdHlwZSI6MSwidmVyaWZ5IjoxLCJpYXQiOjE2OTIzMjQxNjcsImV4cCI6MTcwMDk2NDE2N30.Z2mc19R5043rLyieU_GGn22bdOFItvhgOJfS-yZ0mXI
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: MongoId
+          example: '64db236f5c31640d8fa034f2'
+        name:
+          type: string
+          example: 'Triều Trần'
+        email:
+          type: string
+          example: 'haitrieu2527+12@gmail.com'
+        date_of_birth:
+          type: string
+          format: ISO8601
+          example: '2023-06-18T08:16:31.083Z'
+        created_at:
+          type: string
+          format: ISO8601
+          example: '2023-08-15T07:04:15.701Z'
+        updated_at:
+          type: string
+          format: ISO8601
+          example: '2023-08-15T07:04:15.701Z'
+        verify:
+          $ref: '#/components/schemas/UserVerifyStatus'
+        twitter_circle:
+          type: array
+          items:
+            type: string
+            format: MongoId
+          example: ['64be0ad2e43d2464394feedb', 64be0ad2e43d2464394feed'c]
+        bio:
+          type: string
+          example: 'This is my bio'
+        location:
+          type: string
+          example: 'HCMC, VietNam'
+        website:
+          type: string
+          example: 'mywebsite.com'
+        username:
+          type: string
+          example: 'user64db236f5c31640d8fa034f2'
+        avatar:
+          type: string
+          example: 'http:localhost:4000/images/avatars/johndoe.jpg'
+        cover_photo:
+          type: string
+          example: 'http:localhost:4000/images/avatars/johndoe.jpg'
+    UserVerifyStatus:
+      type: number
+      enum: [Unverified, Verified, Banned]
+      example: 1
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

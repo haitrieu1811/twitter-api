@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable no-undef */
 import { SendEmailCommand, SESClient } from '@aws-sdk/client-ses';
-import { config } from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 
-config();
+import { ENV_CONFIG } from '~/constants/config';
+
 // Create SES service object.
 const sesClient = new SESClient({
-  region: process.env.AWS_REGION as string,
+  region: ENV_CONFIG.AWS_REGION,
   credentials: {
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID as string
+    secretAccessKey: ENV_CONFIG.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: ENV_CONFIG.AWS_ACCESS_KEY_ID
   }
 });
 
@@ -57,7 +57,7 @@ const createSendEmailCommand = ({
 
 const sendEmail = (toAddress: string, subject: string, body: string) => {
   const sendEmailCommand = createSendEmailCommand({
-    fromAddress: process.env.SES_FROM_ADDRESS as string,
+    fromAddress: ENV_CONFIG.SES_FROM_ADDRESS,
     toAddresses: toAddress,
     body,
     subject
@@ -78,7 +78,7 @@ export const sendVerifyEmail = (toAddress: string, email_verify_token: string) =
         '<p>Click the button below to verify your email</p><p>If you are <span style="color: red">not the sender of the request</span>, please skip</p>'
       )
       .replace('{{titleLink}}', 'Verify now')
-      .replace('{{link}}', `${process.env.CLIENT_URL}/verify-email?token=${email_verify_token}`)
+      .replace('{{link}}', `${ENV_CONFIG.CLIENT_URL}/verify-email?token=${email_verify_token}`)
   );
 };
 
@@ -93,6 +93,6 @@ export const sendForgotPasswordEmail = (toAddress: string, forgot_password_token
         '<p>Click the button below to reset your password</p><p>If you are <span style="color: red">not the sender of the request</span>, please skip</p>'
       )
       .replace('{{titleLink}}', 'Reset password')
-      .replace('{{link}}', `${process.env.CLIENT_URL}/verify-forgot-password?token=${forgot_password_token}`)
+      .replace('{{link}}', `${ENV_CONFIG.CLIENT_URL}/verify-forgot-password?token=${forgot_password_token}`)
   );
 };

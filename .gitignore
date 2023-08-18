@@ -3,3 +3,5 @@ dist/
 uploads/
 templates/
 .env
+.env.staging
+.env.production
