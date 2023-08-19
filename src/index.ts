@@ -1,11 +1,14 @@
 import cors from 'cors';
 import express from 'express';
 import fs from 'fs';
+import helmet from 'helmet';
 import { createServer } from 'http';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yaml';
+import rateLimit from 'express-rate-limit';
 
+import { ENV_CONFIG, isProduction } from './constants/config';
 import { UPLOAD_VIDEO_DIR } from './constants/dir';
 import { defaultErrorHandler } from './middlewares/error.middlewares';
 import bookmarksRouter from './routes/bookmarks.routes';
@@ -20,7 +23,6 @@ import databaseService from './services/database.services';
 import { initFolder } from './utils/file';
 import './utils/s3';
 import initSocket from './utils/socket';
-import { ENV_CONFIG } from './constants/config';
 initFolder();
 
 databaseService.connect().then(() => {
@@ -33,13 +35,27 @@ databaseService.connect().then(() => {
   databaseService.indexLikes();
   databaseService.indexTweets();
 });
+
 const app = express();
 const httpServer = createServer(app);
 const port = ENV_CONFIG.PORT || 4000;
 const file = fs.readFileSync(path.resolve('twitter-swagger.yaml'), 'utf8');
 const swaggerDocument = YAML.parse(file);
+const corsOptions = {
+  origin: isProduction ? ENV_CONFIG.CLIENT_URL : '*'
+};
 
-app.use(cors());
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false // Disable the `X-RateLimit-*` headers
+  // store: ... , // Use an external store for more precise rate limiting
+});
+
+app.use(limiter);
+app.use(helmet());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/users', usersRouter);

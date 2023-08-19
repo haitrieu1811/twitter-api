@@ -1,12 +1,30 @@
 import { config } from 'dotenv';
-import argv from 'minimist';
+import fs from 'fs';
+import path from 'path';
 
-const options = argv(process.argv.slice(2));
-export const isProduction = Boolean(options.production);
+const env = process.env.NODE_ENV;
+const envFilename = `.env.${env}`;
+
+if (!env) {
+  console.log('You have not provided the NODE_ENV environment variable (e.g. development, production)');
+  console.log(`Discovered NODE_ENV = ${env}`);
+  process.exit(1);
+}
+console.log(`Discovered NODE_ENV = ${env}, so the app will use the environment file ${envFilename}`);
+if (!fs.existsSync(path.resolve(envFilename))) {
+  console.log(`Environment file ${envFilename} not found`);
+  console.log(
+    'Note: App does not use .env file, for example development environment, app will use .env.development file'
+  );
+  console.log(`Please create a file ${envFilename} and refer to the content in the file .env.example`);
+  process.exit(1);
+}
 
 config({
-  path: options.env ? `.env.${options.env}` : '.env'
+  path: envFilename
 });
+
+export const isProduction = env === 'production';
 
 export const ENV_CONFIG = {
   PORT: process.env.PORT as string,
