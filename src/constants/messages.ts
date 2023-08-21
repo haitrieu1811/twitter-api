@@ -114,5 +114,6 @@ export const SEARCH_MESSAGES = {
 } as const;
 
 export const CONVERSATIONS_MESSAGES = {
-  GET_CONVERSATIONS_SUCCEED: 'Get conversations succeed'
+  GET_CONVERSATIONS_SUCCEED: 'Get conversations succeed',
+  GET_CONVERSATION_SUCCEED: 'Get conversation succeed'
 } as const;

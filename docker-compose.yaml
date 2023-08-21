@@ -1,0 +1,8 @@
+version: '3'
+services:
+  twitter:
+    image: haitrieu1811/twitter:v0
+    ports:
+      - '4000:4000'
+    volumes:
+      - 'E:/workspace/courses/nodejs-super/twitter/uploads:/app/uploads'
