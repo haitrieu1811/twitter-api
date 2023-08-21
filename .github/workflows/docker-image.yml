@@ -1,0 +1,18 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: 'Create env file'
+        run: echo "${{ secrets.TWITTER_ENV_PRODUCTION }}" > .env.production
+      - name: Build the Docker image
+        run: docker build --progress=plain -t haitrieu1811/twitter:v0 .
